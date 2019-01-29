@@ -1,0 +1,10 @@
+models
+models/
+*.log
+!tf.log
+*.txt
+*.png
+*.jpg
+*.pkl
+!t1.jpg
+!t2.jpg

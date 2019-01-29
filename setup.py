@@ -25,7 +25,9 @@ setup(name="pymltools",
           'Topic :: Utilities',
       ],
       install_requires=[
-
+          "tensorflow",
+          "pyxtools",
+          "h5py",
       ],
       author="frkhit",
       url="https://github.com/frkhit/pymltools",
