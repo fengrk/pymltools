@@ -1,12 +1,14 @@
 # -*- coding:utf-8 -*-
 from __future__ import absolute_import
 
+from . import object_detection_utils
 from .basic_tools import *
 from .dataset_file_utils import *
 from .eval_utils import *
 from .init_hook_utils import *
 from .kaggle_voter_utils import *
 from .path_utils import *
+from .project_demo import *
 from .project_demo import *
 from .tf_board_utils import *
 from .tf_ckpt_utils import *
@@ -15,7 +17,6 @@ from .tf_dataset import *
 from .tf_keras_utils import *
 from .tf_model_fn import *
 from .tf_optimizer import *
+from .tf_record_utils import *
 from .tf_visual_tools import *
 from .triplet_loss import *
-from .project_demo import *
-from .tf_record_utils import *
