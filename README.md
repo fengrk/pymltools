@@ -1,2 +1,6 @@
-# ml_tools
-machine learning tools for python3.6
+# pymltools
+machine learning tools for python3.6.
+
+Links:
+
+* `Github <https://github.com/frkhit/pymltools>`_

@@ -1,0 +1,24 @@
+language: python
+
+addons:
+  apt:
+    sources:
+    packages:
+    - libopenblas-dev
+
+python:
+- '3.6'
+install:
+- pip install .
+script:
+- python -m unittest discover -s ./test
+deploy:
+  provider: pypi
+  user: frkhit
+  password:
+    secure: D4zbyhf2+PQMkIIUqmCEoqLAEzK2mjxw6LvsFsdX+XRA+QB5S1Gops+0URIRcMJXTHK/f5bimRFw45ObRFKhPSZAxpACPYWlNQX0ZaxxlulmXKFYEPDhKTaZKKjNclV8H8N4PyNPe41rEAuaO14yQwTr5ggt7FB8tOywKy7LOObHWgt18Rtw1TBqLS1ZzTNhNQcLKXo0DwWJQK2Hs3UYzRQiy2oWpvFrfIGD50Vk0vrLxPfK33FgJoVM/U+OS66uCMxc/2NaD2OpKXJOCkCIABdoXqaerkpJONbYkhuyvaTvuqcmxfPwV+93nvFC1zCMN2s6g76+kek2zBNhY9TVxuWsR+yNraBE4SYQMERmvoPYMRTsHQGDQNl74Hcjpt2RgG7guqTcWN/5TN/+xkXr0aXO1L15MQf+hHiVeQaTi2Hl3uSpngU908lB2wVUZSehkg/j05z/yVLfcWMbOx64nKgKxXVQWy3vSDy5lmQ1y9cbjnRtRYG8nPrNrjPprC2/ZoefB0ea27v98CCFw8S80XAXu+LF4jGScnXo2I6eVB1QQmtTD574ZzwqP+dxLn4ploRPNlyC8FI5AF43YuxfgvyNwsBBtIgxFZ10d4YY+dgfZizrZp5LUGVX6UezrT6E5C2pDrdJimaDoj1II42SwhCsmIJKzX5bb5wwSPe9HH8=
+  on:
+    python: 3.6
+    tags: true
+    branch: master
+
