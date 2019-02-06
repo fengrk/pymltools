@@ -8,6 +8,8 @@ import tensorflow as tf
 from .project_demo import OptimizerType
 from .triplet_loss import batch_hard_triplet_loss
 
+End_Point_Prediction_Key = "prediction_keys"
+
 
 def tf_triplet_loss_model_fn(network, scope_name: str, features_embedding_key: str, features_filename_key: str,
                              get_learning_rate_func, optimizer_type: OptimizerType = OptimizerType.adam,
@@ -29,11 +31,14 @@ def tf_triplet_loss_model_fn(network, scope_name: str, features_embedding_key: s
     """
 
     def model_func(features, labels, mode, params):
+        if labels is not None:
+            labels = tf.cast(labels, tf.int64)
+
         if mode == tf.estimator.ModeKeys.TRAIN:
-            embeddings, end_points = network(scope_name=scope_name, features=features, params=params,
+            embeddings, end_points = network(scope_name=scope_name, features=features, params=params, labels=labels,
                                              is_training=True)
         else:
-            embeddings, end_points = network(scope_name=scope_name, features=features, params=params,
+            embeddings, end_points = network(scope_name=scope_name, features=features, params=params, labels=labels,
                                              is_training=False)
 
         embedding_mean_norm = tf.reduce_mean(tf.norm(embeddings, axis=1))
@@ -52,9 +57,9 @@ def tf_triplet_loss_model_fn(network, scope_name: str, features_embedding_key: s
                 features_embedding_key: embeddings,
                 features_filename_key: features[features_filename_key]
             }
+            if End_Point_Prediction_Key in end_points:
+                predictions.update(end_points[End_Point_Prediction_Key])
             return tf.estimator.EstimatorSpec(mode=mode, predictions=predictions)
-
-        labels = tf.cast(labels, tf.int64)
 
         # Define triplet loss
         loss = batch_hard_triplet_loss(labels, embeddings, margin=params.margin, squared=False)
@@ -102,11 +107,14 @@ def tf_softmax_model_fn(network, scope_name: str, features_filename_key: str, ge
     """
 
     def model_func(features, labels, mode, params):
+        if labels is not None:
+            labels = tf.cast(labels, tf.int64)
+
         if mode == tf.estimator.ModeKeys.TRAIN:
-            logits, end_points = network(scope_name=scope_name, features=features, params=params,
+            logits, end_points = network(scope_name=scope_name, features=features, params=params, labels=labels,
                                          is_training=True)
         else:
-            logits, end_points = network(scope_name=scope_name, features=features, params=params,
+            logits, end_points = network(scope_name=scope_name, features=features, params=params, labels=labels,
                                          is_training=False)
 
         predicted_classes = tf.argmax(logits, 1)
@@ -114,8 +122,10 @@ def tf_softmax_model_fn(network, scope_name: str, features_filename_key: str, ge
             predictions = {
                 'class': predicted_classes,
                 'prob': tf.nn.softmax(logits),
-                'filename': features[features_filename_key]
+                features_filename_key: features[features_filename_key]
             }
+            if End_Point_Prediction_Key in end_points:
+                predictions.update(end_points[End_Point_Prediction_Key])
             return tf.estimator.EstimatorSpec(mode, predictions=predictions)
 
         # Compute loss.
@@ -145,4 +155,4 @@ def tf_softmax_model_fn(network, scope_name: str, features_filename_key: str, ge
     return model_func
 
 
-__all__ = ("tf_triplet_loss_model_fn", "tf_softmax_model_fn")
+__all__ = ("tf_triplet_loss_model_fn", "tf_softmax_model_fn", "End_Point_Prediction_Key")

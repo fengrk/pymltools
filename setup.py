@@ -2,7 +2,7 @@
 from setuptools import setup, find_packages
 
 # version info
-VERSION = (2019, 1, 29)
+VERSION = (2019, 2, 6)
 VERSION_STATUS = ""
 VERSION_TEXT = ".".join(str(x) for x in VERSION) + VERSION_STATUS
 
@@ -29,6 +29,7 @@ setup(name="pymltools",
           "pyxtools",
           "h5py",
           "numpy",
+          "Pillow"
       ],
       author="frkhit",
       url="https://github.com/frkhit/pymltools",
