@@ -2,6 +2,7 @@
 from __future__ import absolute_import
 
 from . import object_detection_utils
+from . import tf_model_fn
 from .basic_tools import *
 from .dataset_file_utils import *
 from .eval_utils import *

@@ -9,6 +9,8 @@ from .project_demo import OptimizerType
 from .triplet_loss import batch_hard_triplet_loss
 
 End_Point_Prediction_Key = "prediction_keys"
+Prediction_Key_Class = "class"
+Prediction_Key_Prob = "prob"
 
 
 def tf_triplet_loss_model_fn(network, scope_name: str, features_embedding_key: str, features_filename_key: str,
@@ -78,19 +80,23 @@ def tf_triplet_loss_model_fn(network, scope_name: str, features_embedding_key: s
             optimizer = tf.train.GradientDescentOptimizer(learning_rate=get_learning_rate_func())
         else:
             optimizer = tf.train.AdamOptimizer(learning_rate=get_learning_rate_func())
-        global_step = tf.train.get_global_step()
 
-        # batch norm need this code:
-        logger.debug("update ops: {}".format(tf.get_collection(tf.GraphKeys.UPDATE_OPS)))
-        with tf.control_dependencies(tf.get_collection(tf.GraphKeys.UPDATE_OPS)):
-            train_op = optimizer.minimize(loss, global_step=global_step, var_list=None)
+        # train op
+        update_op_list = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+        logger.debug("update ops: {}".format(update_op_list))
+        if update_op_list:
+            # batch norm need this code:
+            with tf.control_dependencies(update_op_list):
+                train_op = optimizer.minimize(loss, global_step=tf.train.get_global_step())
+        else:
+            train_op = optimizer.minimize(loss, global_step=tf.train.get_global_step())
 
         return tf.estimator.EstimatorSpec(mode, loss=loss, train_op=train_op)
 
     return model_func
 
 
-def tf_softmax_model_fn(network, scope_name: str, features_filename_key: str, get_learning_rate_func,
+def tf_softmax_model_fn(network, scope_name: str, get_learning_rate_func, features_filename_key: str = None,
                         optimizer_type: OptimizerType = OptimizerType.adam, logger=logging):
     """
 
@@ -120,10 +126,12 @@ def tf_softmax_model_fn(network, scope_name: str, features_filename_key: str, ge
         predicted_classes = tf.argmax(logits, 1)
         if mode == tf.estimator.ModeKeys.PREDICT:
             predictions = {
-                'class': predicted_classes,
-                'prob': tf.nn.softmax(logits),
-                features_filename_key: features[features_filename_key]
+                Prediction_Key_Class: predicted_classes,
+                Prediction_Key_Prob: tf.nn.softmax(logits),
             }
+            if features_filename_key:
+                predictions[features_filename_key] = features[features_filename_key]
+
             if End_Point_Prediction_Key in end_points:
                 predictions.update(end_points[End_Point_Prediction_Key])
             return tf.estimator.EstimatorSpec(mode, predictions=predictions)
@@ -141,12 +149,17 @@ def tf_softmax_model_fn(network, scope_name: str, features_filename_key: str, ge
             else:
                 optimizer = tf.train.AdamOptimizer(learning_rate=get_learning_rate_func())
 
-            # batch norm need this code:
-            logger.debug("update ops: {}".format(tf.get_collection(tf.GraphKeys.UPDATE_OPS)))
-            with tf.control_dependencies(tf.get_collection(tf.GraphKeys.UPDATE_OPS)):
-                all_train_op = optimizer.minimize(loss, global_step=tf.train.get_global_step())
+            # train op
+            update_op_list = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+            logger.debug("update ops: {}".format(update_op_list))
+            if update_op_list:
+                # batch norm need this code:
+                with tf.control_dependencies(update_op_list):
+                    train_op = optimizer.minimize(loss, global_step=tf.train.get_global_step())
+            else:
+                train_op = optimizer.minimize(loss, global_step=tf.train.get_global_step())
 
-            return tf.estimator.EstimatorSpec(mode, loss=loss, train_op=all_train_op, scaffold=None)
+            return tf.estimator.EstimatorSpec(mode, loss=loss, train_op=train_op, scaffold=None)
 
         # Compute evaluation metrics.
         eval_metric_ops = {'accuracy': tf.metrics.accuracy(labels=labels, predictions=predicted_classes)}
@@ -155,4 +168,72 @@ def tf_softmax_model_fn(network, scope_name: str, features_filename_key: str, ge
     return model_func
 
 
-__all__ = ("tf_triplet_loss_model_fn", "tf_softmax_model_fn", "End_Point_Prediction_Key")
+def tf_margin_base_softmax_model_fn(network, loss_fn, scope_name: str, get_learning_rate_func,
+                                    optimizer_type: OptimizerType = OptimizerType.adam, logger=logging):
+    """
+
+    Args:
+        network: func,
+        loss_fn: func,
+        scope_name: str, scope name of net
+        get_learning_rate_func: func, get learning rate
+        optimizer_type: OptimizerType
+        logger: logging.Logger
+
+    Returns:
+        func: model fn for estimator
+    """
+
+    def model_func(features, labels, mode, params):
+        if labels is not None:
+            labels = tf.cast(labels, tf.int64)
+
+        if mode == tf.estimator.ModeKeys.TRAIN:
+            embeddings, end_points = network(scope_name=scope_name, features=features, params=params, labels=labels,
+                                             is_training=True)
+        else:
+            embeddings, end_points = network(scope_name=scope_name, features=features, params=params, labels=labels,
+                                             is_training=False)
+
+        logits, loss = loss_fn(embeddings=embeddings, labels=labels, )
+        predicted_classes = tf.argmax(logits, 1)
+        if mode == tf.estimator.ModeKeys.PREDICT:
+            predictions = {
+                Prediction_Key_Class: predicted_classes,
+                Prediction_Key_Prob: tf.nn.softmax(logits),
+            }
+            if End_Point_Prediction_Key in end_points:
+                predictions.update(end_points[End_Point_Prediction_Key])
+            return tf.estimator.EstimatorSpec(mode, predictions=predictions)
+
+        # Create training op.
+        if mode == tf.estimator.ModeKeys.TRAIN:
+            tf.summary.scalar('loss', loss)
+
+            # Define training step that minimizes the loss with the Adam optimizer
+            if optimizer_type == OptimizerType.sgd:
+                optimizer = tf.train.GradientDescentOptimizer(learning_rate=get_learning_rate_func())
+            else:
+                optimizer = tf.train.AdamOptimizer(learning_rate=get_learning_rate_func())
+
+            # train op
+            update_op_list = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+            logger.debug("update ops: {}".format(update_op_list))
+            if update_op_list:
+                # batch norm need this code:
+                with tf.control_dependencies(update_op_list):
+                    train_op = optimizer.minimize(loss, global_step=tf.train.get_global_step())
+            else:
+                train_op = optimizer.minimize(loss, global_step=tf.train.get_global_step())
+
+            return tf.estimator.EstimatorSpec(mode, loss=loss, train_op=train_op, scaffold=None)
+
+        # Compute evaluation metrics.
+        eval_metric_ops = {'accuracy': tf.metrics.accuracy(labels=labels, predictions=predicted_classes)}
+        return tf.estimator.EstimatorSpec(mode, loss=loss, eval_metric_ops=eval_metric_ops)
+
+    return model_func
+
+
+__all__ = ("tf_triplet_loss_model_fn", "tf_softmax_model_fn", "End_Point_Prediction_Key",
+           "tf_margin_base_softmax_model_fn", "Prediction_Key_Prob", "Prediction_Key_Class")
