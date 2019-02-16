@@ -9,14 +9,18 @@ import os
 import tensorflow as tf
 from PIL import Image
 
+from pyxtools import list_files
+
 try:
     from pymltools.tf_utils import siamese_net_preprocess_image_np, whale_siamese_preprocess_tf, init_logger
 except ImportError:
     from pymltools.pymltools.tf_utils import siamese_net_preprocess_image_np, whale_siamese_preprocess_tf, init_logger
 
-from pymltools.test.utils import list_jpg_file
-
 init_logger(None)
+
+
+def list_jpg_file() -> list:
+    return [img_file for img_file in list_files(os.path.dirname(__file__)) if img_file.endswith(".jpg")]
 
 
 class TestSiameseNetProcess(unittest.TestCase):
