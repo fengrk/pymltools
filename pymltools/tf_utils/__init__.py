@@ -2,6 +2,7 @@
 from __future__ import absolute_import
 
 from . import object_detection_utils
+from . import pre_process_utils
 from . import tf_model_fn
 from .basic_tools import *
 from .dataset_file_utils import *
@@ -9,6 +10,7 @@ from .eval_utils import *
 from .init_hook_utils import *
 from .kaggle_voter_utils import *
 from .path_utils import *
+from .pre_process_utils import *
 from .project_demo import *
 from .project_demo import *
 from .tf_board_utils import *
