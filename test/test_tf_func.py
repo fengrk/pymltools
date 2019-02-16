@@ -7,6 +7,7 @@ import unittest
 
 import numpy as np
 import os
+import shutil
 import tensorflow as tf
 import tensorflow.contrib.slim as slim
 
@@ -256,11 +257,12 @@ class TestTFGrad(unittest.TestCase):
         self.assertFalse(os.path.exists(train_dir))
 
         # todo travis error: `Error in `python': corrupted size vs. prev_size`
-        # estimator = BPDebugEstimator(train_dir)
-        # for i in range(10):
-        #     estimator.train(batch_size=8, num_epochs=1)
-        #
-        # estimator.evaluate(batch_size=1, num_epochs=1)
+        estimator = BPDebugEstimator(train_dir)
+        for i in range(10):
+            estimator.train(batch_size=8, num_epochs=1)
 
-        # self.assertTrue(os.path.exists(train_dir))
-        # shutil.rmtree(train_dir)
+        estimator.evaluate(batch_size=1, num_epochs=1)
+
+        self.assertTrue(os.path.exists(train_dir))
+        shutil.rmtree(train_dir)
+        self.assertFalse(os.path.exists(train_dir))
