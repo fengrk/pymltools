@@ -7,7 +7,6 @@ import unittest
 
 import numpy as np
 import os
-import shutil
 import tensorflow as tf
 import tensorflow.contrib.slim as slim
 
@@ -261,5 +260,5 @@ class TestTFGrad(unittest.TestCase):
         estimator.evaluate(batch_size=1, num_epochs=1)
 
         self.assertTrue(os.path.exists(train_dir))
-        shutil.rmtree(train_dir)
-        self.assertFalse(os.path.exists(train_dir))
+        # shutil.rmtree(train_dir)
+        # self.assertFalse(os.path.exists(train_dir))
