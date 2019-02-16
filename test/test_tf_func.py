@@ -260,5 +260,6 @@ class TestTFGrad(unittest.TestCase):
 
         estimator.evaluate(batch_size=1, num_epochs=1)
 
-        if os.path.exists(train_dir):
-            shutil.rmtree(train_dir)
+        self.assertTrue(os.path.exists(train_dir))
+        shutil.rmtree(train_dir)
+        self.assertFalse(os.path.exists(train_dir))
