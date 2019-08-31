@@ -2,11 +2,11 @@
 from __future__ import absolute_import
 
 import logging
+import os
 import platform
+import shutil
 import time
 
-import os
-import shutil
 import tensorflow as tf
 from tensorflow.contrib.learn.python.learn.datasets.mnist import DEFAULT_SOURCE_URL, dtypes, read_data_sets
 
@@ -85,18 +85,20 @@ def get_mini_train_set(fake_data=False,
                        reshape=True,
                        validation_size=5000,
                        seed=None,
-                       source_url=DEFAULT_SOURCE_URL):
-    mnist_path = get_wsl_path("E:/frkhit/Download/AI/data-set/MNIST_data")
-    if not os.path.exists(mnist_path):
-        os.mkdir(mnist_path)
+                       source_url=DEFAULT_SOURCE_URL,
+                       mnist_path: str = None):
+    if mnist_path is None:
+        mnist_path = get_wsl_path("E:/frkhit/Download/AI/data-set/MNIST_data")
+        if not os.path.exists(mnist_path):
+            os.mkdir(mnist_path)
 
-    tar_path = get_wsl_path("E:/frkhit/Download/AI/data-set/mnist")
-    if os.path.exists(tar_path):
-        tar_file_list = [file_name for file_name in list_files(tar_path) if file_name.endswith(".gz")]
-        for file_name in tar_file_list:
-            dst_file_name = os.path.join(mnist_path, os.path.basename(file_name))
-            if not os.path.exists(dst_file_name):
-                shutil.copy(file_name, dst_file_name)
+        tar_path = get_wsl_path("E:/frkhit/Download/AI/data-set/mnist")
+        if os.path.exists(tar_path):
+            tar_file_list = [file_name for file_name in list_files(tar_path) if file_name.endswith(".gz")]
+            for file_name in tar_file_list:
+                dst_file_name = os.path.join(mnist_path, os.path.basename(file_name))
+                if not os.path.exists(dst_file_name):
+                    shutil.copy(file_name, dst_file_name)
 
     return read_data_sets(mnist_path,
                           fake_data=fake_data,
